@@ -1,0 +1,25 @@
+***download react icons on terminal***
+```
+npm i react-icons
+```
+
+***download React Icons on terminal***
+```
+npm i lucide-react
+```
+
+***download react Router Dom***
+```
+npm i react-router-dom
+```
+
+***Axios fetching Data***
+```
+npm i axios
+```
+
+***React Tasify***
+
+```
+npm i --save react-toastify
+```
