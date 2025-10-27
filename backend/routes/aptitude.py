@@ -66,36 +66,39 @@ async def seed_initial_questions():
         conn = database.db.get_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # Check if questions already exist
-        cursor.execute("SELECT COUNT(*) as count FROM aptitude_questions")
-        result = cursor.fetchone()
+        # First, clear existing questions to ensure we have exactly 50
+        cursor.execute("DELETE FROM aptitude_questions")
+        print("🗑️ Cleared existing questions")
         
-        if result['count'] == 0:
-            # Insert all 50 questions
-            for question in SAMPLE_QUESTIONS:
-                cursor.execute("""
-                    INSERT INTO aptitude_questions (question, options, answer, category, difficulty)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (
-                    question["question"],
-                    json.dumps(question["options"]),
-                    question["answer"],
-                    "General",
-                    "Medium"
-                ))
-            
-            conn.commit()
-            print(f"✅ Seeded {len(SAMPLE_QUESTIONS)} initial questions")
+        # Insert all 50 questions
+        for i, question in enumerate(SAMPLE_QUESTIONS):
+            cursor.execute("""
+                INSERT INTO aptitude_questions (question, options, answer, category, difficulty)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                question["question"],
+                json.dumps(question["options"]),
+                question["answer"],
+                "General",
+                "Medium"
+            ))
+            print(f"✅ Inserted question {i+1}: {question['question'][:50]}...")
+        
+        conn.commit()
+        print(f"🎉 Successfully seeded {len(SAMPLE_QUESTIONS)} questions")
         
     except Exception as e:
-        print(f"Error seeding questions: {e}")
+        print(f"❌ Error seeding questions: {e}")
+        if conn:
+            conn.rollback()
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
 
 @router.get("/")
 async def get_questions(category: Optional[str] = None, difficulty: Optional[str] = None):
     try:
-        # Seed questions if empty
+        # Always seed questions to ensure we have all 50
         await seed_initial_questions()
         
         conn = database.db.get_connection()
@@ -112,7 +115,7 @@ async def get_questions(category: Optional[str] = None, difficulty: Optional[str
             query += " AND difficulty = %s"
             params.append(difficulty)
         
-        # Remove ORDER BY RAND() to get all questions in consistent order
+        # Get all questions in consistent order
         query += " ORDER BY id"
         
         cursor.execute(query, params)
@@ -123,13 +126,37 @@ async def get_questions(category: Optional[str] = None, difficulty: Optional[str
             question['options'] = json.loads(question['options'])
         
         print(f"✅ Fetched {len(questions)} questions from database")
+        
+        if len(questions) != 50:
+            print(f"⚠️ Warning: Expected 50 questions but got {len(questions)}")
+        
         return questions
         
     except Exception as e:
-        print(f"Error fetching questions: {e}")
+        print(f"❌ Error fetching questions: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+
+@router.get("/count")
+async def get_question_count():
+    """Endpoint to check how many questions are in the database"""
+    try:
+        conn = database.db.get_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute("SELECT COUNT(*) as count FROM aptitude_questions")
+        result = cursor.fetchone()
+        
+        return {"question_count": result['count']}
+        
+    except Exception as e:
+        print(f"Error counting questions: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        if cursor:
+            cursor.close()
 
 @router.post("/bulk")
 async def bulk_insert_questions(questions: List[models.AptitudeQuestionCreate]):
@@ -173,7 +200,8 @@ async def bulk_insert_questions(questions: List[models.AptitudeQuestionCreate]):
         print(f"Error in bulk insert: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
 
 @router.post("/submit-test")
 async def submit_test_result(test_data: schemas.TestSubmission):
@@ -206,7 +234,8 @@ async def submit_test_result(test_data: schemas.TestSubmission):
         print(f"Error saving test result: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
 
 @router.get("/results")
 async def get_test_results(email: Optional[str] = None):
@@ -232,4 +261,5 @@ async def get_test_results(email: Optional[str] = None):
         print(f"Error fetching test results: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()

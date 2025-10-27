@@ -27,25 +27,35 @@ const OnlineTest = () => {
   }, []);
 
   // Fetch questions from backend
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        console.log('🔄 Fetching questions from backend...');
-        const response = await axios.get('http://localhost:8000/api/aptitude');
-        
-        if (!response.data || response.data.length === 0) {
-          throw new Error('No questions available in the database');
-        }
-        
-        console.log(`✅ Fetched ${response.data.length} questions`);
-        setQuestions(response.data);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('❌ Error fetching questions:', err);
-        setError(err.response?.data?.message || err.message);
-        setIsLoading(false);
+  const fetchQuestions = async () => {
+    try {
+      console.log('🔄 Fetching questions from backend...');
+      const response = await axios.get('http://localhost:8000/api/aptitude');
+      
+      if (!response.data || response.data.length === 0) {
+        throw new Error('No questions available in the database');
       }
-    };
+      
+      console.log(`✅ Fetched ${response.data.length} questions`);
+      
+      // Transform questions to ensure they have proper IDs
+      const transformedQuestions = response.data.map((q, index) => ({
+        ...q,
+        id: q.id || index + 1, // Use database ID or fallback to index
+        _id: q.id || index + 1 // Also set _id for compatibility
+      }));
+      
+      setQuestions(transformedQuestions);
+      setIsLoading(false);
+      
+    } catch (err) {
+      console.error('❌ Error fetching questions:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to load questions');
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchQuestions();
   }, []);
 
@@ -88,7 +98,8 @@ const OnlineTest = () => {
 
     let correctAnswers = 0;
     questions.forEach((question) => {
-      if (selectedAnswersRef.current[question.id] === question.answer) {
+      const questionId = question.id || question._id;
+      if (selectedAnswersRef.current[questionId] === question.answer) {
         correctAnswers++;
       }
     });
@@ -189,13 +200,19 @@ const OnlineTest = () => {
     setCurrentQuestionIndex(index);
   };
 
+  const retryFetchQuestions = () => {
+    setIsLoading(true);
+    setError(null);
+    fetchQuestions();
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-lg text-gray-600">Loading questions...</p>
-          <p className="text-sm text-gray-500">Please wait while we prepare your test</p>
+          <p className="text-sm text-gray-500">Preparing your test with 50 questions</p>
         </div>
       </div>
     );
@@ -223,17 +240,20 @@ const OnlineTest = () => {
             <h2 className="text-xl font-bold text-gray-800 mb-2">
               {questions.length === 0 ? 'No Questions Available' : 'Error Loading Questions'}
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               {questions.length === 0
                 ? 'The question bank is currently empty. Please contact the administrator.'
                 : error}
             </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Questions loaded: {questions.length}/50
+            </p>
             <div className="space-y-3">
               <button
-                onClick={() => window.location.reload()}
+                onClick={retryFetchQuestions}
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Refresh
+                Try Again
               </button>
               <button
                 onClick={() => navigate('/')}
@@ -249,17 +269,18 @@ const OnlineTest = () => {
   }
 
   const currentQuestion = questions[currentQuestionIndex];
+  const questionId = currentQuestion.id || currentQuestion._id;
   const allQuestionsAnswered = Object.keys(selectedAnswers).length === questions.length;
   const timerEnded = timeLeft <= 0;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto mt-16">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content - Questions */}
           <div className="lg:w-2/3 bg-white rounded-xl shadow-md p-6">
             {/* Webcam Section */}
-            <div className="mb-6">
+            <div className="mb-6 ">
               <h3 className="text-lg font-bold text-gray-800 mb-2">Webcam Feed</h3>
               {videoError ? (
                 <div className="text-red-500 text-sm bg-red-50 p-4 rounded-lg">{videoError}</div>
@@ -303,9 +324,9 @@ const OnlineTest = () => {
                 {currentQuestion.options.map((option, idx) => (
                   <div
                     key={idx}
-                    onClick={() => handleOptionSelect(currentQuestion.id, option)}
+                    onClick={() => handleOptionSelect(questionId, option)}
                     className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                      selectedAnswers[currentQuestion.id] === option
+                      selectedAnswers[questionId] === option
                         ? 'border-blue-500 bg-blue-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
@@ -313,12 +334,12 @@ const OnlineTest = () => {
                     <div className="flex items-center">
                       <div
                         className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          selectedAnswers[currentQuestion.id] === option
+                          selectedAnswers[questionId] === option
                             ? 'border-blue-500 bg-blue-500'
                             : 'border-gray-300'
                         }`}
                       >
-                        {selectedAnswers[currentQuestion.id] === option && (
+                        {selectedAnswers[questionId] === option && (
                           <span className="text-white text-sm">✓</span>
                         )}
                       </div>
@@ -378,25 +399,28 @@ const OnlineTest = () => {
           <div className="lg:w-1/3 bg-white rounded-xl shadow-md p-6 h-fit sticky top-4">
             <div className="mb-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4">Question Navigator</h3>
-              <div className="grid grid-cols-5 gap-2 max-h-60 overflow-y-auto">
-                {questions.map((q, index) => (
-                  <button
-                    key={q.id}
-                    onClick={() => goToQuestion(index)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 ${
-                      selectedAnswers[q.id]
-                        ? 'bg-green-100 text-green-800 border-green-300'
-                        : 'bg-gray-100 text-gray-800 border-gray-300'
-                    } ${
-                      currentQuestionIndex === index
-                        ? 'ring-2 ring-blue-500 transform scale-110 border-blue-500'
-                        : 'hover:bg-gray-200 hover:border-gray-400'
-                    }`}
-                    title={`Question ${index + 1}${selectedAnswers[q.id] ? ' - Answered' : ' - Unanswered'}`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
+              <div className="grid grid-cols-5 gap-2 max-h-60 overflow-y-auto p-1">
+                {questions.map((q, index) => {
+                  const qId = q.id || q._id;
+                  return (
+                    <button
+                      key={qId}
+                      onClick={() => goToQuestion(index)}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 ${
+                        selectedAnswers[qId]
+                          ? 'bg-green-100 text-green-800 border-green-300'
+                          : 'bg-gray-100 text-gray-800 border-gray-300'
+                      } ${
+                        currentQuestionIndex === index
+                          ? 'ring-2 ring-blue-500 transform scale-110 border-blue-500'
+                          : 'hover:bg-gray-200 hover:border-gray-400'
+                      }`}
+                      title={`Question ${index + 1}${selectedAnswers[qId] ? ' - Answered' : ' - Unanswered'}`}
+                    >
+                      {index + 1}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
