@@ -14,6 +14,7 @@ import models
 import schemas
 from dotenv import load_dotenv
 import asyncio
+import json
 
 load_dotenv()
 
@@ -60,9 +61,9 @@ async def send_email(to_email: str, subject: str, body: str, html_body: str = No
             username=EMAIL,
             password=EMAIL_PASSWORD,
         )
-        print(f"Email sent to {to_email}")
+        print(f"✅ Email sent to {to_email}")
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"❌ Error sending email: {e}")
 
 async def send_confirmation_email(first_name: str, email: str):
     subject = "Your Application Submitted Successfully"

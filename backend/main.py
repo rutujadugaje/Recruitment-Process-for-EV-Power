@@ -1,14 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import database
-from routes import application_form, job_position
+from routes import application_form, aptitude, job_position, user_aptitude_login, admin
 import os
-import uvicorn
 
-app = FastAPI(title="Job Portal API", version="1.0.0")
+app = FastAPI(title="EV Power Recruitment API", version="1.0.0")
 
-# CORS middleware - updated with more origins
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -20,13 +19,9 @@ app.add_middleware(
 # Initialize database
 @app.on_event("startup")
 async def startup_event():
-    try:
-        database.db.connect()
-        print("✅ Database initialized successfully")
-    except Exception as e:
-        print(f"❌ Database connection failed: {e}")
+    database.db.connect()
 
-# Create uploads directory if it doesn't exist
+# Create uploads directory
 os.makedirs("uploads", exist_ok=True)
 
 # Mount static files for resume downloads
@@ -34,23 +29,20 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include routers
 app.include_router(application_form.router)
+app.include_router(aptitude.router)
 app.include_router(job_position.router)
+app.include_router(user_aptitude_login.router)
+app.include_router(admin.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Job Portal API is running", "status": "healthy"}
+    return {"message": "EV Power Recruitment API is running"}
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "Server is running"}
 
 if __name__ == "__main__":
-    port = int(os.getenv('PORT', 5000))
-    print(f"🚀 Starting server on port {port}...")
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=port,
-        reload=True,
-        access_log=True
-    )
+    import uvicorn
+    port = int(os.getenv('PORT', 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

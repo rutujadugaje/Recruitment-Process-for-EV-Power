@@ -15,6 +15,9 @@ class Database:
         self.connection = None
 
     def connect(self, retries=3, delay=2):
+        print(f"🔧 Attempting to connect to MySQL...")
+        print(f"🔧 Host: {self.host}, User: {self.user}, Database: {self.database}")
+        
         for attempt in range(retries):
             try:
                 self.connection = mysql.connector.connect(
@@ -22,12 +25,13 @@ class Database:
                     user=self.user,
                     password=self.password,
                     database=self.database,
-                    auth_plugin='mysql_native_password'  # Add this line
+                    auth_plugin='mysql_native_password'
                 )
                 if self.connection.is_connected():
-                    print("✅ Database connected successfully")
+                    db_info = self.connection.get_server_info()
+                    print(f"✅ Database connected successfully! MySQL version: {db_info}")
                     self.create_tables()
-                return self.connection
+                    return self.connection
             except Error as e:
                 print(f"❌ Attempt {attempt + 1} failed: {e}")
                 if attempt < retries - 1:
@@ -74,19 +78,50 @@ class Database:
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     title VARCHAR(255) NOT NULL,
                     description TEXT,
+                    location VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
             
+            # Aptitude Questions Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS aptitude_questions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    question TEXT NOT NULL,
+                    options JSON NOT NULL,
+                    answer VARCHAR(500) NOT NULL,
+                    category VARCHAR(100) DEFAULT 'General',
+                    difficulty ENUM('Easy', 'Medium', 'Hard') DEFAULT 'Medium',
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Test Results Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS test_results (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    questions JSON NOT NULL,
+                    selected_answers JSON NOT NULL,
+                    score INT NOT NULL,
+                    total_questions INT NOT NULL,
+                    percentage DECIMAL(5,2) NOT NULL,
+                    time_spent INT NOT NULL,
+                    test_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
             self.connection.commit()
-            print("✅ Tables created/verified successfully")
+            print("✅ All tables created/verified successfully")
             
         except Error as e:
             print(f"❌ Error creating tables: {e}")
 
     def get_connection(self):
         if self.connection is None or not self.connection.is_connected():
-            self.connect()
+            return self.connect()
         return self.connection
 
 # Database instance

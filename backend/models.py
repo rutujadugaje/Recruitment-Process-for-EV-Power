@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, validator
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 import re
 
@@ -15,20 +15,20 @@ class ApplicationFormBase(BaseModel):
 
     @validator('first_name', 'last_name')
     def validate_name_length(cls, v):
-        if len(v) < 3:
-            raise ValueError('must be at least 3 characters long')
+        if len(v) < 2:
+            raise ValueError('must be at least 2 characters long')
         return v
 
     @validator('address')
     def validate_address_length(cls, v):
-        if len(v) < 3:
-            raise ValueError('must be at least 3 characters long')
+        if len(v) < 10:
+            raise ValueError('must be at least 10 characters long')
         return v
 
     @validator('mobile')
     def validate_mobile(cls, v):
-        if not re.match(r'^\+?1?\d{9,15}$', v):
-            raise ValueError('must be a valid mobile number')
+        if not re.match(r'^[6-9]\d{9}$', v):
+            raise ValueError('must be a valid 10-digit mobile number')
         return v
 
     @validator('cgpa')
@@ -52,6 +52,10 @@ class AptitudeUserCreate(BaseModel):
     email: EmailStr
     password: str
 
+class AptitudeUserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
 class AptitudeUserResponse(BaseModel):
     id: int
     email: EmailStr
@@ -63,6 +67,7 @@ class AptitudeUserResponse(BaseModel):
 class JobPositionBase(BaseModel):
     title: str
     description: Optional[str] = None
+    location: Optional[str] = None
 
 class JobPositionCreate(JobPositionBase):
     pass
@@ -73,3 +78,49 @@ class JobPositionResponse(JobPositionBase):
 
     class Config:
         from_attributes = True
+
+class AptitudeQuestionBase(BaseModel):
+    question: str
+    options: List[str]
+    answer: str
+    category: Optional[str] = "General"
+    difficulty: Optional[str] = "Medium"
+
+class AptitudeQuestionCreate(AptitudeQuestionBase):
+    pass
+
+class AptitudeQuestionResponse(AptitudeQuestionBase):
+    id: int
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class TestResultBase(BaseModel):
+    email: str
+    questions: List[Dict[str, Any]]
+    selected_answers: Dict[str, str]
+    score: int
+    total_questions: int
+    percentage: float
+    time_spent: int
+
+class TestResultCreate(TestResultBase):
+    pass
+
+class TestResultResponse(TestResultBase):
+    id: int
+    test_date: datetime
+
+    class Config:
+        from_attributes = True
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str

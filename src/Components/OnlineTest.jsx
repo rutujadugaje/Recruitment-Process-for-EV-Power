@@ -30,14 +30,18 @@ const OnlineTest = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/aptitude');
+        console.log('🔄 Fetching questions from backend...');
+        const response = await axios.get('http://localhost:8000/api/aptitude');
+        
         if (!response.data || response.data.length === 0) {
           throw new Error('No questions available in the database');
         }
+        
+        console.log(`✅ Fetched ${response.data.length} questions`);
         setQuestions(response.data);
         setIsLoading(false);
       } catch (err) {
-        console.error('Error fetching questions:', err);
+        console.error('❌ Error fetching questions:', err);
         setError(err.response?.data?.message || err.message);
         setIsLoading(false);
       }
@@ -77,14 +81,14 @@ const OnlineTest = () => {
   }, [selectedAnswers]);
 
   // Handle form submission
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     clearInterval(timerRef.current);
 
     let correctAnswers = 0;
     questions.forEach((question) => {
-      if (selectedAnswersRef.current[question._id] === question.answer) {
+      if (selectedAnswersRef.current[question.id] === question.answer) {
         correctAnswers++;
       }
     });
@@ -100,6 +104,23 @@ const OnlineTest = () => {
       email: email || null,
     };
 
+    // Save to backend
+    try {
+      await axios.post('http://localhost:8000/api/aptitude/submit-test', {
+        email: email,
+        questions: questions,
+        selected_answers: selectedAnswersRef.current,
+        score: correctAnswers,
+        total_questions: questions.length,
+        percentage: Math.round((correctAnswers / questions.length) * 100),
+        time_spent: 60 * 60 - timeLeft
+      });
+      console.log('✅ Test result saved to backend');
+    } catch (err) {
+      console.error('❌ Error saving test result to backend:', err);
+    }
+
+    // Save to localStorage
     setUserTests((prevTests) => {
       const updatedTests = [...prevTests, testResult];
       localStorage.setItem('userTests', JSON.stringify(updatedTests));
@@ -174,6 +195,7 @@ const OnlineTest = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-lg text-gray-600">Loading questions...</p>
+          <p className="text-sm text-gray-500">Please wait while we prepare your test</p>
         </div>
       </div>
     );
@@ -231,60 +253,72 @@ const OnlineTest = () => {
   const timerEnded = timeLeft <= 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto py-12">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main Content - Questions */}
           <div className="lg:w-2/3 bg-white rounded-xl shadow-md p-6">
+            {/* Webcam Section */}
             <div className="mb-6">
               <h3 className="text-lg font-bold text-gray-800 mb-2">Webcam Feed</h3>
               {videoError ? (
-                <div className="text-red-500 text-sm">{videoError}</div>
+                <div className="text-red-500 text-sm bg-red-50 p-4 rounded-lg">{videoError}</div>
               ) : (
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
-                  className="w-full h-64 rounded-lg object-cover"
+                  muted
+                  className="w-full h-48 rounded-lg object-cover border-2 border-gray-200"
                 />
               )}
             </div>
+
+            {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">EV Knowledge Test</h1>
                 <p className="text-gray-600">
                   Question {currentQuestionIndex + 1} of {questions.length}
                 </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Total Questions: {questions.length} | Time: 60 minutes
+                </p>
               </div>
               <div
                 className={`text-xl font-bold px-4 py-2 rounded-lg ${
-                  timeLeft <= 300 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                  timeLeft <= 300 ? 'bg-red-100 text-red-700 animate-pulse' : 'bg-blue-100 text-blue-700'
                 }`}
               >
                 Time Left: {formatTime(timeLeft)}
               </div>
             </div>
-            <div className="mb-8 p-6 bg-gray-50 rounded-lg">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">{currentQuestion.question}</h2>
-              <div className="space-y-4">
+
+            {/* Question Section */}
+            <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6">
+                {currentQuestionIndex + 1}. {currentQuestion.question}
+              </h2>
+              <div className="space-y-3">
                 {currentQuestion.options.map((option, idx) => (
                   <div
                     key={idx}
-                    onClick={() => handleOptionSelect(currentQuestion._id, option)}
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      selectedAnswers[currentQuestion._id] === option
-                        ? 'border-blue-500 bg-blue-50'
+                    onClick={() => handleOptionSelect(currentQuestion.id, option)}
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                      selectedAnswers[currentQuestion.id] === option
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex items-center">
                       <div
                         className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          selectedAnswers[currentQuestion._id] === option
+                          selectedAnswers[currentQuestion.id] === option
                             ? 'border-blue-500 bg-blue-500'
                             : 'border-gray-300'
                         }`}
                       >
-                        {selectedAnswers[currentQuestion._id] === option && (
+                        {selectedAnswers[currentQuestion.id] === option && (
                           <span className="text-white text-sm">✓</span>
                         )}
                       </div>
@@ -294,14 +328,16 @@ const OnlineTest = () => {
                 ))}
               </div>
             </div>
+
+            {/* Navigation Buttons */}
             <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8">
               <button
                 onClick={goToPrevQuestion}
                 disabled={currentQuestionIndex === 0}
-                className={`px-6 py-3 rounded-lg w-full sm:w-auto ${
+                className={`px-6 py-3 rounded-lg w-full sm:w-auto transition-all ${
                   currentQuestionIndex === 0
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md'
                 }`}
               >
                 ← Previous
@@ -310,7 +346,7 @@ const OnlineTest = () => {
                 {currentQuestionIndex < questions.length - 1 ? (
                   <button
                     onClick={goToNextQuestion}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:shadow-md transition-all w-full"
                   >
                     Next Question →
                   </button>
@@ -318,41 +354,53 @@ const OnlineTest = () => {
                   <button
                     onClick={handleSubmit}
                     disabled={!(allQuestionsAnswered || timerEnded) || isSubmitting}
-                    className={`px-6 py-3 rounded-lg w-full ${
+                    className={`px-6 py-3 rounded-lg w-full transition-all ${
                       allQuestionsAnswered || timerEnded
-                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        ? 'bg-green-600 text-white hover:bg-green-700 hover:shadow-md'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >
-                    Submit Test
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Submitting...
+                      </div>
+                    ) : (
+                      'Submit Test'
+                    )}
                   </button>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Sidebar - Navigation & Progress */}
           <div className="lg:w-1/3 bg-white rounded-xl shadow-md p-6 h-fit sticky top-4">
             <div className="mb-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-2">Question Navigator</h3>
-              <div className="grid grid-cols-5 gap-3">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Question Navigator</h3>
+              <div className="grid grid-cols-5 gap-2 max-h-60 overflow-y-auto">
                 {questions.map((q, index) => (
                   <button
-                    key={q._id}
+                    key={q.id}
                     onClick={() => goToQuestion(index)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                      selectedAnswers[q._id]
-                        ? 'bg-green-100 text-green-800 border border-green-300'
-                        : 'bg-gray-100 text-gray-800 border border-gray-300'
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 ${
+                      selectedAnswers[q.id]
+                        ? 'bg-green-100 text-green-800 border-green-300'
+                        : 'bg-gray-100 text-gray-800 border-gray-300'
                     } ${
                       currentQuestionIndex === index
-                        ? 'ring-2 ring-blue-500 transform scale-105'
-                        : 'hover:bg-gray-200'
+                        ? 'ring-2 ring-blue-500 transform scale-110 border-blue-500'
+                        : 'hover:bg-gray-200 hover:border-gray-400'
                     }`}
+                    title={`Question ${index + 1}${selectedAnswers[q.id] ? ' - Answered' : ' - Unanswered'}`}
                   >
                     {index + 1}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Progress Bar */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-600">Progress</span>
@@ -369,31 +417,42 @@ const OnlineTest = () => {
                 ></div>
               </div>
             </div>
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center">
+
+            {/* Legend */}
+            <div className="space-y-2 mb-6">
+              <div className="flex items-center text-sm">
                 <div className="w-4 h-4 rounded-full bg-green-100 border border-green-300 mr-2"></div>
-                <span className="text-sm text-gray-600">Answered</span>
+                <span className="text-gray-600">Answered</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center text-sm">
                 <div className="w-4 h-4 rounded-full bg-gray-100 border border-gray-300 mr-2"></div>
-                <span className="text-sm text-gray-600">Unanswered</span>
+                <span className="text-gray-600">Unanswered</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center text-sm">
                 <div className="w-4 h-4 rounded-full bg-blue-100 border border-blue-300 mr-2"></div>
-                <span className="text-sm text-gray-600">Current</span>
+                <span className="text-gray-600">Current</span>
               </div>
             </div>
+
+            {/* Submit Button */}
             <button
               onClick={handleSubmit}
               disabled={!(allQuestionsAnswered || timerEnded) || isSubmitting}
-              className={`w-full py-3 rounded-lg font-medium ${
+              className={`w-full py-3 rounded-lg font-medium transition-all ${
                 allQuestionsAnswered || timerEnded
-                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  ? 'bg-red-600 text-white hover:bg-red-700 hover:shadow-md'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
               {timerEnded ? "Time's Up! Submit Now" : 'Submit Test Now'}
             </button>
+
+            {/* Test Info */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700 text-center">
+                <strong>Note:</strong> All {questions.length} questions must be answered before submitting.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -402,4 +461,3 @@ const OnlineTest = () => {
 };
 
 export default OnlineTest;
-

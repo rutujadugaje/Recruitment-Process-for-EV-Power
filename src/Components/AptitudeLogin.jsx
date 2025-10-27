@@ -30,7 +30,7 @@ const AptitudeLogin = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post(`http://localhost:5000/api/user-aptitude-login`, formData);
+      const res = await axios.post(`http://localhost:8000/api/user-aptitude-login`, formData);
       toast.success('Login successful!');
       localStorage.setItem('token', res.data.authtoken);
       setTimeout(() => {
