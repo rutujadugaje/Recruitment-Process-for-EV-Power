@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import {
@@ -109,6 +108,14 @@ const HRDashboard = () => {
   const [selectedTest, setSelectedTest] = useState(null);
   const { state } = useLocation();
 
+  // Get logged-in user info from localStorage
+  const loggedInUser = {
+    name: localStorage.getItem('user_name') || 'HR User',
+    email: localStorage.getItem('user_email') || 'hr@evpower.com',
+    role: localStorage.getItem('user_role') || 'hr',
+    initials: (localStorage.getItem('user_name') || 'HR').split(' ').map(n => n[0]).join('')
+  };
+
   useEffect(() => {
     if (state?.activeTab) setActiveTab(state.activeTab);
   }, [state]);
@@ -144,77 +151,6 @@ const HRDashboard = () => {
     { id: 28, name: 'Zara Khan', position: 'Operations Manager', department: 'Operations', status: 'active', joinedDate: '2024-07-12' },
     { id: 29, name: 'Akash Bose', position: 'Full Stack Developer', department: 'Engineering', status: 'active', joinedDate: '2025-04-22' },
     { id: 30, name: 'Bina Roy', position: 'HR Manager', department: 'Human Resources', status: 'active', joinedDate: '2024-03-18' },
-    { id: 31, name: 'Chetan Mistry', position: 'Content Strategist', department: 'Marketing', status: 'active', joinedDate: '2024-11-30' },
-    { id: 32, name: 'Deepa Sen', position: 'Database Administrator', department: 'IT', status: 'active', joinedDate: '2025-02-10' },
-    { id: 33, name: 'Eklavya Gill', position: 'Scrum Master', department: 'Product', status: 'active', joinedDate: '2024-08-22' },
-    { id: 34, name: 'Farhan Ali', position: 'SEO Specialist', department: 'Marketing', status: 'active', joinedDate: '2024-06-05' },
-    { id: 35, name: 'Gita Menon', position: 'Mobile Developer', department: 'Engineering', status: 'suspended', joinedDate: '2024-09-18' },
-    { id: 36, name: 'Harsh Vora', position: 'Payroll Specialist', department: 'Finance', status: 'active', joinedDate: '2025-03-25' },
-    { id: 37, name: 'Ira Dutta', position: 'Technical Writer', department: 'Product', status: 'active', joinedDate: '2024-12-15' },
-    { id: 38, name: 'Jivan Rana', position: 'System Analyst', department: 'IT', status: 'active', joinedDate: '2024-04-28' },
-    { id: 39, name: 'Kavya Suri', position: 'Event Coordinator', department: 'Marketing', status: 'active', joinedDate: '2025-05-12' },
-    { id: 40, name: 'Lakshay Arora', position: 'AI Engineer', department: 'Data Science', status: 'active', joinedDate: '2024-07-20' },
-    { id: 41, name: 'Meera Bajaj', position: 'Web Developer', department: 'Engineering', status: 'active', joinedDate: '2024-10-08' },
-    { id: 42, name: 'Nitin Grover', position: 'Supply Chain Analyst', department: 'Operations', status: 'on leave', joinedDate: '2024-05-15' },
-    { id: 43, name: 'Ojasvi Kohli', position: 'UX Researcher', department: 'Design', status: 'active', joinedDate: '2025-01-28' },
-    { id: 44, name: 'Parth Trivedi', position: 'Sales Representative', department: 'Sales', status: 'active', joinedDate: '2024-03-30' },
-    { id: 45, name: 'Quincy Lobo', position: 'Compliance Officer', department: 'Finance', status: 'active', joinedDate: '2024-11-05' },
-    { id: 46, name: 'Riya Mathur', position: 'Data Engineer', department: 'Data Science', status: 'active', joinedDate: '2025-04-15' },
-    { id: 47, name: 'Siddharth Puri', position: 'Backend Developer', department: 'Engineering', status: 'active', joinedDate: '2024-08-10' },
-    { id: 48, name: 'Tara Shetty', position: 'Marketing Manager', department: 'Marketing', status: 'active', joinedDate: '2024-06-25' },
-    { id: 49, name: 'Uday Khanna', position: 'Network Administrator', department: 'IT', status: 'active', joinedDate: '2025-02-05' },
-    { id: 50, name: 'Vani Chopra', position: 'Product Analyst', department: 'Product', status: 'active', joinedDate: '2024-09-22' },
-    { id: 51, name: 'Wyatt Sethi', position: 'Customer Success Manager', department: 'Support', status: 'active', joinedDate: '2024-12-592' },
-    { id: 52, name: 'Xena Parekh', position: 'Graphic Designer', department: 'Design', status: 'on leave', joinedDate: '2024-04-592' },
-    { id: 53, name: 'Yuvraj Bhasin', position: 'DevOps Engineer', department: 'Engineering', status: 'active', joinedDate: '2025-03-18' },
-    { id: 54, name: 'Zoya Mirza', position: 'HR Coordinator', department: 'Human Resources', status: 'active', joinedDate: '2024-07-08' },
-    { id: 55, name: 'Amit Chawla', position: 'Frontend Developer', department: 'Engineering', status: 'active', joinedDate: '2024-10-12' },
-    { id: 56, name: 'Bhavna Luthra', position: 'Content Manager', department: 'Marketing', status: 'active', joinedDate: '2025-01-10' },
-    { id: 57, name: 'Chirag Goyal', position: 'Data Analyst', department: 'Data Science', status: 'active', joinedDate: '2024-05-25' },
-    { id: 58, name: 'Divya Tandon', position: 'Project Coordinator', department: 'Product', status: 'active', joinedDate: '2024-11-18' },
-    { id: 59, name: 'Eshaan Vaidya', position: 'Security Engineer', department: 'IT', status: 'suspended', joinedDate: '2024-03-12' },
-    { id: 60, name: 'Falguni Kaul', position: 'Account Manager', department: 'Sales', status: 'active', joinedDate: '2025-04-05' },
-    { id: 61, name: 'Gopal Shukla', position: 'UX Designer', department: 'Design', status: 'active', joinedDate: '2024-08-02' },
-    { id: 62, name: 'Hina Batra', position: 'Financial Planner', department: 'Finance', status: 'active', joinedDate: '2024-06-15' },
-    { id: 63, name: 'Inder Pal', position: 'Software Architect', department: 'Engineering', status: 'active', joinedDate: '2025-02-22' },
-    { id: 64, name: 'Jasmine Dhillon', position: 'Social Media Specialist', department: 'Marketing', status: 'active', joinedDate: '2024-09-30' },
-    { id: 65, name: 'Keshav Juneja', position: 'Cloud Engineer', department: 'Engineering', status: 'active', joinedDate: '2024-12-25' },
-    { id: 66, name: 'Lavanya Sood', position: 'Recruiter', department: 'Human Resources', status: 'on leave', joinedDate: '2024-04-08' },
-    { id: 67, name: 'Manish Wadhwa', position: 'Operations Analyst', department: 'Operations', status: 'active', joinedDate: '2025-03-30' },
-    { id: 68, name: 'Nupur Grewal', position: 'Mobile Developer', department: 'Engineering', status: 'active', joinedDate: '2024-07-22' },
-    { id: 69, name: 'Omar Farooq', position: 'Customer Support Lead', department: 'Support', status: 'active', joinedDate: '2024-10-15' },
-    { id: 70, name: 'Poonam Ahuja', position: 'Data Scientist', department: 'Data Science', status: 'active', joinedDate: '2025-01-05' },
-    { id: 71, name: 'Qasim Rizvi', position: 'Product Manager', department: 'Product', status: 'active', joinedDate: '2024-05-10' },
-    { id: 72, name: 'Reema Nanda', position: 'Web Designer', department: 'Design', status: 'active', joinedDate: '2024-11-22' },
-    { id: 73, name: 'Sahil Malhotra', position: 'Network Engineer', department: 'IT', status: 'active', joinedDate: '2025-04-18' },
-    { id: 74, name: 'Tina Grover', position: 'Sales Executive', department: 'Sales', status: 'active', joinedDate: '2024-08-05' },
-    { id: 75, name: 'Utkarsh Bedi', position: 'QA Lead', department: 'Engineering', status: 'active', joinedDate: '2024-06-30' },
-    { id: 76, name: 'Vibha Kapur', position: 'Marketing Analyst', department: 'Marketing', status: 'active', joinedDate: '2025-02-15' },
-    { id: 77, name: 'Wasim Akhtar', position: 'Financial Analyst', department: 'Finance', status: 'on leave', joinedDate: '2024-03-20' },
-    { id: 78, name: 'Xavier Dsouza', position: 'Backend Developer', department: 'Engineering', status: 'active', joinedDate: '2024-09-12' },
-    { id: 79, name: 'Yamini Vohra', position: 'HR Specialist', department: 'Human Resources', status: 'active', joinedDate: '2025-05-08' },
-    { id: 80, name: 'Zain Iqbal', position: 'Product Designer', department: 'Design', status: 'active', joinedDate: '2024-12-10' },
-    { id: 81, name: 'Ankur Seth', position: 'DevOps Engineer', department: 'Engineering', status: 'active', joinedDate: '2024-07-15' },
-    { id: 82, name: 'Barkha Jha', position: 'Content Writer', department: 'Marketing', status: 'active', joinedDate: '2024-10-28' },
-    { id: 83, name: 'Chandan Negi', position: 'Data Engineer', department: 'Data Science', status: 'active', joinedDate: '2025-03-22' },
-    { id: 84, name: 'Damini Sahni', position: 'Project Manager', department: 'Product', status: 'active', joinedDate: '2024-04-15' },
-    { id: 85, name: 'Elias Mathew', position: 'Security Analyst', department: 'IT', status: 'active', joinedDate: '2024-11-08' },
-    { id: 86, name: 'Fatima Sheikh', position: 'Sales Manager', department: 'Sales', status: 'active', joinedDate: '2025-01-18' },
-    { id: 87, name: 'Girish Bhalla', position: 'UX Researcher', department: 'Design', status: 'active', joinedDate: '2024-06-20' },
-    { id: 88, name: 'Hema Rawat', position: 'Accountant', department: 'Finance', status: 'active', joinedDate: '2024-08-12' },
-    { id: 89, name: 'Ibrahim Qureshi', position: 'Frontend Developer', department: 'Engineering', status: 'suspended', joinedDate: '2025-04-25' },
-    { id: 90, name: 'Jyoti Saluja', position: 'Digital Marketer', department: 'Marketing', status: 'active', joinedDate: '2024-05-18' },
-    { id: 91, name: 'Kunal Dua', position: 'Cloud Architect', department: 'Engineering', status: 'active', joinedDate: '2024-12-28' },
-    { id: 92, name: 'Leela Khosla', position: 'HR Manager', department: 'Human Resources', status: 'active', joinedDate: '2024-07-28' },
-    { id: 93, name: 'Mayank Tuli', position: 'Business Analyst', department: 'Product', status: 'active', joinedDate: '2025-02-08' },
-    { id: 94, name: 'Nisha Brar', position: 'Network Administrator', department: 'IT', status: 'active', joinedDate: '2024-09-25' },
-    { id: 95, name: 'Aarav Sharma', position: 'Software Engineer', department: 'Engineering', status: 'active', joinedDate: '2024-06-15' },
-    { id: 96, name: 'Aditi Patel', position: 'Data Analyst', department: 'Data Science', status: 'active', joinedDate: '2025-01-20' },
-    { id: 97, name: 'Arjun Desai', position: 'Product Manager', department: 'Product', status: 'on leave', joinedDate: '2024-09-10' },
-    { id: 98, name: 'Ananya Gupta', position: 'Frontend Developer', department: 'Engineering', status: 'active', joinedDate: '2024-11-27' },
-    { id: 99, name: 'Aryan Singh', position: 'Marketing Specialist', department: 'Marketing', status: 'active', joinedDate: '2024-07-05' },
-    { id: 100, name: 'Avani Joshi', position: 'Sales Executive', department: 'Sales', status: 'active', joinedDate: '2024-08-07' },
-    { id: 101, name: 'Bhavya Mehta', position: 'DevOps Engineer', department: 'Engineering', status: 'active', joinedDate: '2025-03-12' },
   ], []);
 
   const upcomingEvents = useMemo(() => [
@@ -237,6 +173,14 @@ const HRDashboard = () => {
     ), [baseEmployees, searchTerm]);
 
   const recentEmployeesForDashboard = useMemo(() => filteredEmployees.slice(0, 4), [filteredEmployees]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_name');
+    window.location.href = '/';
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
@@ -283,9 +227,11 @@ const HRDashboard = () => {
         {sidebarOpen && (
           <div className="p-4 bg-opacity-50 border-t border-opacity-50">
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center"><span className="text-lg font-semibold">NA</span></div>
+              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                <span className="text-lg font-semibold text-white">{loggedInUser.initials}</span>
+              </div>
               <div className="ml-3">
-                <p className="text-sm text-black font-bold">Nikhil Aher</p>
+                <p className="text-sm text-black font-bold">{loggedInUser.name}</p>
                 <p className="text-xs text-black">HR Manager</p>
               </div>
             </div>
@@ -337,19 +283,21 @@ const HRDashboard = () => {
               </div>
               <div className="relative">
                 <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center"><span className="text-indigo-800 font-medium">JD</span></div>
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span className="text-indigo-800 font-medium">{loggedInUser.initials}</span>
+                  </div>
                   <FiChevronDown className="text-gray-600" />
                 </button>
                 {profileDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-20 py-1">
                     <div className="p-3 border-b border-gray-200">
-                      <p className="text-sm font-medium text-gray-800">John Doe</p>
+                      <p className="text-sm font-medium text-gray-800">{loggedInUser.name}</p>
                       <p className="text-xs text-gray-500">HR Manager</p>
                     </div>
                     <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
                     <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                     <div className="border-t border-gray-200 my-1"></div>
-                    <a href="#" className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</a>
+                    <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
                   </div>
                 )}
               </div>

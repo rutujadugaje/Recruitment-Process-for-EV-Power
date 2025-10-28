@@ -86,32 +86,32 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
     switch (name) {
       case 'firstName':
       case 'lastName':
-        if (!value.trim()) return 'This field is required';
-        if (value.length < 2) return 'Must be at least 2 characters';
+        if (!value || !value.trim()) return 'This field is required';
+        if (value.trim().length < 2) return 'Must be at least 2 characters';
         return '';
       
       case 'address':
-        if (!value.trim()) return 'Address is required';
-        if (value.length < 10) return 'Address must be at least 10 characters';
+        if (!value || !value.trim()) return 'Address is required';
+        if (value.trim().length < 10) return 'Address must be at least 10 characters';
         return '';
       
       case 'mobile':
-        if (!value.trim()) return 'Mobile number is required';
-        if (!/^[6-9]\d{9}$/.test(value)) return 'Enter a valid 10-digit mobile number';
+        if (!value || !value.trim()) return 'Mobile number is required';
+        if (!/^[6-9]\d{9}$/.test(value.trim())) return 'Enter a valid 10-digit mobile number';
         return '';
       
       case 'email':
-        if (!value.trim()) return 'Email is required';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email address';
+        if (!value || !value.trim()) return 'Email is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return 'Enter a valid email address';
         return '';
       
       case 'graduation':
-        if (!value.trim()) return 'Graduation field is required';
-        if (value.length < 2) return 'Must be at least 2 characters';
+        if (!value || !value.trim()) return 'Graduation field is required';
+        if (value.trim().length < 2) return 'Must be at least 2 characters';
         return '';
       
       case 'cgpa':
-        if (!value) return 'CGPA is required';
+        if (!value && value !== 0) return 'CGPA is required';
         const cgpaValue = parseFloat(value);
         if (isNaN(cgpaValue) || cgpaValue < 0 || cgpaValue > 10) return 'CGPA must be between 0 and 10';
         return '';
@@ -184,19 +184,24 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
     return isValid;
   };
 
+  // FIXED: Proper form validation function
   const isFormValid = () => {
-    return (
-      formData.firstName &&
-      formData.lastName &&
-      formData.address &&
-      formData.mobile &&
-      formData.email &&
-      formData.graduation &&
-      formData.cgpa &&
+    // Check if all required fields have valid values
+    const allFieldsValid = 
+      formData.firstName && formData.firstName.trim().length >= 2 &&
+      formData.lastName && formData.lastName.trim().length >= 2 &&
+      formData.address && formData.address.trim().length >= 10 &&
+      formData.mobile && /^[6-9]\d{9}$/.test(formData.mobile.trim()) &&
+      formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()) &&
+      formData.graduation && formData.graduation.trim().length >= 2 &&
+      formData.cgpa && !isNaN(parseFloat(formData.cgpa)) && parseFloat(formData.cgpa) >= 0 && parseFloat(formData.cgpa) <= 10 &&
       formData.position &&
-      formData.resume &&
-      Object.values(fieldErrors).every(error => !error)
-    );
+      formData.resume;
+
+    // Check if there are no validation errors
+    const noErrors = Object.values(fieldErrors).every(error => !error);
+
+    return allFieldsValid && noErrors;
   };
 
   const handleSubmit = async () => {
@@ -465,7 +470,6 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
                     value={formData.address}
                     onChange={handleChange}
                     disabled={isSubmitting}
-                    placeholder="Enter your complete address"
                   />
                   {fieldErrors.address && (
                     <p className="text-red-500 text-xs mt-1">{fieldErrors.address}</p>
@@ -499,7 +503,6 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
                       value={formData.mobile}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      placeholder="10-digit number"
                     />
                     {fieldErrors.mobile && (
                       <p className="text-red-500 text-xs mt-1">{fieldErrors.mobile}</p>
@@ -531,7 +534,6 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
                       value={formData.email}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      placeholder="your@email.com"
                     />
                     {fieldErrors.email && (
                       <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
@@ -566,7 +568,6 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
                       value={formData.graduation}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      placeholder="e.g., B.Tech Computer Science"
                     />
                     {fieldErrors.graduation && (
                       <p className="text-red-500 text-xs mt-1">{fieldErrors.graduation}</p>
@@ -601,7 +602,6 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
                       value={formData.cgpa}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      placeholder="e.g., 8.5"
                     />
                     {fieldErrors.cgpa && (
                       <p className="text-red-500 text-xs mt-1">{fieldErrors.cgpa}</p>
@@ -676,7 +676,7 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
                 onClick={handleSubmit}
                 className={`w-full py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors mt-6 ${
                   isFormValid() && !isSubmitting
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 transform hover:scale-105 transition-all duration-200' 
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
@@ -689,6 +689,11 @@ const ApplicationFormModal = ({ isOpen, onClose }) => {
                   'Submit Application'
                 )}
               </button>
+              
+              {/* Debug info (you can remove this in production) */}
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                Form Status: {isFormValid() ? '✅ Ready to Submit' : '❌ Please fill all fields correctly'}
+              </div>
               
               {/* Required fields note */}
               <p className="text-xs text-gray-500 mt-3 text-center">

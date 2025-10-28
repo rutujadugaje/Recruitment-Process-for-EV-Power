@@ -150,13 +150,7 @@ const Login = ({ isOpen, onClose }) => {
               </div>
               
               {/* Demo Credentials Info */}
-              <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-700">
-                  <strong>Test Credentials (Auto-filled):</strong><br />
-                  • Admin: sandipbaste999@gmail.com / root@123<br />
-                  • HR: dugajerutuja@gmail.com / root@123
-                </p>
-              </div>
+              
             </div>
           )}
 
@@ -255,10 +249,7 @@ const Login = ({ isOpen, onClose }) => {
                   )}
                 </button>
 
-                {/* Quick Info */}
-                <div className="text-center text-sm text-gray-600">
-                  Currently logged in as: <strong>{formData.email}</strong>
-                </div>
+                
               </form>
             </>
           )}
