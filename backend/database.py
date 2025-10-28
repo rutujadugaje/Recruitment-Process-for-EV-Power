@@ -3,6 +3,7 @@ from mysql.connector import Error
 import os
 from dotenv import load_dotenv
 import time
+import bcrypt
 
 load_dotenv()
 
@@ -44,6 +45,8 @@ class Database:
     def create_tables(self):
         try:
             cursor = self.connection.cursor()
+            
+            # Your existing tables...
             
             # Application Forms Table
             cursor.execute("""
@@ -113,13 +116,65 @@ class Database:
                 )
             """)
             
+            # Admin HR Users Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS admin_hr_users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    role ENUM('admin', 'hr') NOT NULL,
+                    full_name VARCHAR(255),
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            """)
+            
             self.connection.commit()
             print("✅ All tables created/verified successfully")
+            
+            # Create default admin users
+            self.create_default_admin_users()
             
         except Error as e:
             print(f"❌ Error creating tables: {e}")
 
+    def create_default_admin_users(self):
+        try:
+            cursor = self.connection.cursor(dictionary=True)
+            
+            # Check if users already exist
+            cursor.execute("SELECT COUNT(*) as count FROM admin_hr_users")
+            result = cursor.fetchone()
+            
+            if result['count'] == 0:
+                # Hash the password
+                hashed_password = bcrypt.hashpw("root@123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                
+                # Insert admin user
+                cursor.execute("""
+                    INSERT INTO admin_hr_users (email, password, role, full_name)
+                    VALUES (%s, %s, %s, %s)
+                """, ('sandipbaste999@gmail.com', hashed_password, 'admin', 'Sandip Baste'))
+                
+                # Insert HR user
+                cursor.execute("""
+                    INSERT INTO admin_hr_users (email, password, role, full_name)
+                    VALUES (%s, %s, %s, %s)
+                """, ('dugajerutuja@gmail.com', hashed_password, 'hr', 'Rutuja Dugaje'))
+                
+                self.connection.commit()
+                print("✅ Default admin and HR users created successfully")
+                
+        except Exception as e:
+            print(f"❌ Error creating default admin users: {e}")
+            self.connection.rollback()
+        finally:
+            if cursor:
+                cursor.close()
+
     def get_connection(self):
+        """Get database connection - reconnect if necessary"""
         if self.connection is None or not self.connection.is_connected():
             return self.connect()
         return self.connection

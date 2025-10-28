@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import database
-from routes import application_form, aptitude, job_position, user_aptitude_login, admin
+from routes import application_form, aptitude, job_position, user_aptitude_login, admin, admin_auth
 import os
 
 app = FastAPI(title="EV Power Recruitment API", version="1.0.0")
@@ -33,6 +33,7 @@ app.include_router(aptitude.router)
 app.include_router(job_position.router)
 app.include_router(user_aptitude_login.router)
 app.include_router(admin.router)
+app.include_router(admin_auth.router)
 
 @app.get("/")
 async def root():

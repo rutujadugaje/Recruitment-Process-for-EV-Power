@@ -4,15 +4,20 @@ import { FaEye, FaEyeSlash, FaLock, FaEnvelope, FaUserTie, FaUserShield } from '
 import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
-import SignUp from './SignUp';
 
 const Login = ({ isOpen, onClose }) => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [fieldFocused, setFieldFocused] = useState({ email: false, password: false });
+  const [formData, setFormData] = useState({ 
+    email: '', 
+    password: '' 
+  });
+  const [fieldFocused, setFieldFocused] = useState({ 
+    email: false, 
+    password: false 
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showSignUp, setShowSignUp] = useState(false);
-  const [loginType, setLoginType] = useState(null); // 'hr' or 'admin' or null for role selection
+  const [loginType, setLoginType] = useState(null);
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -31,18 +36,53 @@ const Login = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!loginType) {
+      toast.error('Please select a login type');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Include the login type in the request
-      const loginData = { ...formData, role: loginType };
-      const res = await axios.post(`http://localhost:5000/api/login`, loginData);
-      toast.success(`${loginType.toUpperCase()} Login successful!`);
-      localStorage.setItem('token', res.data.token);
+      const loginData = { 
+        email: formData.email.trim(), 
+        password: formData.password, 
+        role: loginType 
+      };
+      
+      console.log('🔄 Sending login request:', loginData);
+      
+      const res = await axios.post(`http://localhost:8000/api/admin-login`, loginData);
+      
+      toast.success(`Login successful! Welcome ${res.data.full_name}`, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      
+      // Store token and user info
+      localStorage.setItem('admin_token', res.data.access_token);
+      localStorage.setItem('user_role', res.data.role);
+      localStorage.setItem('user_email', res.data.email);
+      localStorage.setItem('user_name', res.data.full_name);
+      
       onClose();
-      navigate(res.data.role === 'admin' ? '/admin/dashboard' : '/hr/dashboard');
+      
+      // Navigate to appropriate dashboard
+      setTimeout(() => {
+        if (res.data.role === 'admin') {
+          navigate('/admindashboard');
+        } else {
+          navigate('/hr-dashboard');
+        }
+      }, 1000);
+      
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Login failed. Check credentials.';
-      toast.error(errorMsg);
+      console.error('❌ Login error:', err.response?.data);
+      const errorMsg = err.response?.data?.detail || 'Login failed. Please check your credentials.';
+      toast.error(errorMsg, {
+        position: "top-right",
+        autoClose: 5000,
+      });
     } finally {
       setLoading(false);
     }
@@ -50,8 +90,10 @@ const Login = ({ isOpen, onClose }) => {
 
   const handleRoleSelect = (role) => {
     setLoginType(role);
-    setFormData({ email: '', password: '' }); // Reset form when switching roles
-    setFieldFocused({ email: false, password: false });
+    // Pre-fill email based on role for easier testing
+    const email = role === 'admin' ? 'sandipbaste999@gmail.com' : 'dugajerutuja@gmail.com';
+    setFormData({ email, password: 'root@123' });
+    setFieldFocused({ email: true, password: false });
   };
 
   const handleBackToRoleSelection = () => {
@@ -60,170 +102,159 @@ const Login = ({ isOpen, onClose }) => {
     setFieldFocused({ email: false, password: false });
   };
 
-  const handleSignUpClick = () => {
-    onClose(); // Close login modal first
-    setShowSignUp(true); // Then open signup modal
-  };
-
-  if (!isOpen && !showSignUp) return null;
+  if (!isOpen) return null;
 
   return (
     <>
-      <ToastContainer />
-      
-      {/* Login Modal */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 relative">
-            <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-red-500 text-xl"
-              onClick={onClose}
-            >
-              ✕
-            </button>
-
-            {/* Role Selection Screen */}
-            {!loginType && (
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Choose Login Type</h2>
-                <div className="space-y-4">
-                  <button
-                    onClick={() => handleRoleSelect('hr')}
-                    className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-3 hover:shadow-lg"
-                  >
-                    <FaUserTie className="text-xl" />
-                    <span>HR Login</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => handleRoleSelect('admin')}
-                    className="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center space-x-3 hover:shadow-lg"
-                  >
-                    <FaUserShield className="text-xl" />
-                    <span>Admin Login</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Login Form Screen */}
-            {loginType && (
-              <>
-                <div className="flex items-center mb-6">
-                  <button
-                    onClick={handleBackToRoleSelection}
-                    className="text-gray-600 hover:text-gray-800 mr-3"
-                  >
-                    ← Back
-                  </button>
-                  <h2 className="text-2xl font-bold text-gray-800 flex-1 text-center">
-                    {loginType === 'hr' ? 'HR Login' : 'Admin Login'}
-                  </h2>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Email */}
-                  <div className="relative">
-                    <div className="absolute left-3 top-3.5 text-gray-400">
-                      <FaEnvelope />
-                    </div>
-                    <label htmlFor="email"
-                      className={`absolute left-10 px-1 bg-white transition-all duration-200 ${
-                        fieldFocused.email || formData.email
-                          ? 'top-0 text-sm text-blue-500 -translate-y-1/2'
-                          : 'top-3.5 text-gray-400'
-                      }`}>
-                      Email Address
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      className="w-full py-3 pl-10 pr-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onFocus={() => handleFocus('email')}
-                      onBlur={() => handleBlur('email')}
-                      onChange={handleChange}
-                      value={formData.email}
-                      required
-                    />
-                  </div>
-
-                  {/* Password */}
-                  <div className="relative">
-                    <div className="absolute left-3 top-3.5 text-gray-400">
-                      <FaLock />
-                    </div>
-                    <label htmlFor="password"
-                      className={`absolute left-10 px-1 bg-white transition-all duration-200 ${
-                        fieldFocused.password || formData.password
-                          ? 'top-0 text-sm text-blue-500 -translate-y-1/2'
-                          : 'top-3.5 text-gray-400'
-                      }`}>
-                      Password
-                    </label>
-                    <input
-                      id="password"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      className="w-full py-3 pl-10 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onFocus={() => handleFocus('password')}
-                      onBlur={() => handleBlur('password')}
-                      onChange={handleChange}
-                      value={formData.password}
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
-                      onClick={togglePasswordVisibility}
-                    >
-                      {showPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                  </div>
-
-                  {/* Submit */}
-                  <button
-                    type="submit"
-                    disabled={!isFormValid || loading}
-                    className={`w-full py-3 font-semibold rounded-lg transition-all ${
-                      isFormValid && !loading
-                        ? loginType === 'hr' 
-                          ? 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:shadow-lg'
-                          : 'bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:shadow-lg'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {loading ? 'Logging in...' : `Login as ${loginType.toUpperCase()}`}
-                  </button>
-
-                  {/* Switch to Signup */}
-                  {/* <p className="text-sm text-center text-gray-600 mt-4">
-                    Don't have an account?{' '}
-                    <button
-                      type="button"
-                      className="text-blue-500 hover:underline"
-                      onClick={handleSignUpClick}
-                    >
-                      Create one
-                    </button>
-                  </p> */}
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* SignUp Modal */}
-      <SignUp 
-        isOpen={showSignUp} 
-        onClose={() => setShowSignUp(false)} 
-        switchToLogin={() => {
-          setShowSignUp(false);
-          // If you want to reopen login modal after signup closes:
-          // onClose();
-        }}
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
       />
+      
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 relative">
+          <button
+            className="absolute top-2 right-2 text-gray-600 hover:text-red-500 text-xl"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+
+          {/* Role Selection Screen */}
+          {!loginType && (
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Choose Login Type</h2>
+              <div className="space-y-4">
+                <button
+                  onClick={() => handleRoleSelect('hr')}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-3 hover:shadow-lg"
+                >
+                  <FaUserTie className="text-xl" />
+                  <span>HR Login</span>
+                </button>
+                
+                <button
+                  onClick={() => handleRoleSelect('admin')}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center justify-center space-x-3 hover:shadow-lg"
+                >
+                  <FaUserShield className="text-xl" />
+                  <span>Admin Login</span>
+                </button>
+              </div>
+              
+              {/* Demo Credentials Info */}
+              
+            </div>
+          )}
+
+          {/* Login Form Screen */}
+          {loginType && (
+            <>
+              <div className="flex items-center mb-6">
+                <button
+                  onClick={handleBackToRoleSelection}
+                  className="text-gray-600 hover:text-gray-800 mr-3"
+                >
+                  ← Back
+                </button>
+                <h2 className="text-2xl font-bold text-gray-800 flex-1 text-center">
+                  {loginType === 'hr' ? 'HR Login' : 'Admin Login'}
+                </h2>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Email */}
+                <div className="relative">
+                  <div className="absolute left-3 top-3.5 text-gray-400">
+                    <FaEnvelope />
+                  </div>
+                  <label htmlFor="email"
+                    className={`absolute left-10 px-1 bg-white transition-all duration-200 ${
+                      fieldFocused.email || formData.email
+                        ? 'top-0 text-sm text-blue-500 -translate-y-1/2'
+                        : 'top-3.5 text-gray-400'
+                    }`}>
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    className="w-full py-3 pl-10 pr-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onFocus={() => handleFocus('email')}
+                    onBlur={() => handleBlur('email')}
+                    onChange={handleChange}
+                    value={formData.email}
+                    required
+                  />
+                </div>
+
+                {/* Password */}
+                <div className="relative">
+                  <div className="absolute left-3 top-3.5 text-gray-400">
+                    <FaLock />
+                  </div>
+                  <label htmlFor="password"
+                    className={`absolute left-10 px-1 bg-white transition-all duration-200 ${
+                      fieldFocused.password || formData.password
+                        ? 'top-0 text-sm text-blue-500 -translate-y-1/2'
+                        : 'top-3.5 text-gray-400'
+                    }`}>
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="w-full py-3 pl-10 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onFocus={() => handleFocus('password')}
+                    onBlur={() => handleBlur('password')}
+                    onChange={handleChange}
+                    value={formData.password}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={!isFormValid || loading}
+                  className={`w-full py-3 font-semibold rounded-lg transition-all ${
+                    isFormValid && !loading
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-lg transform hover:scale-105'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Logging in...
+                    </div>
+                  ) : (
+                    `Login as ${loginType.toUpperCase()}`
+                  )}
+                </button>
+
+                
+              </form>
+            </>
+          )}
+        </div>
+      </div>
     </>
   );
 };
